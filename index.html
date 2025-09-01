@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Tumor Classification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300 font-sans">
+
+    <div class="w-full max-w-2xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 space-y-8 transition-transform duration-300 transform hover:scale-105">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-900 dark:text-white">Brain Tumor Classifier</h1>
+        <p class="text-center text-gray-600 dark:text-gray-300">
+            Upload an MRI scan to predict if a tumor is present and visualize the areas the model focused on.
+        </p>
+
+        <!-- File Upload Section -->
+        <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600">
+            <div class="flex flex-col items-center justify-center space-y-4">
+                <input type="file" id="image-upload" accept="image/*" class="hidden" />
+                <label for="image-upload" class="cursor-pointer bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-3 px-6 rounded-full shadow-lg transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50">
+                    <span id="file-label">Select an MRI Image</span>
+                </label>
+                <span id="file-name" class="text-sm text-gray-500 dark:text-gray-400">No file chosen</span>
+            </div>
+        </div>
+
+        <!-- Prediction Button -->
+        <div class="flex justify-center">
+            <button id="predict-button" disabled class="w-full sm:w-auto px-8 py-3 bg-green-500 text-white font-bold rounded-full shadow-lg transition-all duration-300 opacity-50 cursor-not-allowed">
+                Predict
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-container" class="hidden space-y-6">
+            <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl shadow-inner">
+                <h2 class="text-2xl font-semibold text-center mb-4">Results</h2>
+                <div id="loading-spinner" class="flex justify-center items-center hidden">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+                </div>
+                <div id="error-message" class="text-red-500 font-medium text-center hidden"></div>
+                <div id="result-details" class="hidden text-center space-y-4">
+                    <p class="text-lg">
+                        Prediction: <span id="prediction-text" class="font-bold text-indigo-500"></span>
+                    </p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Confidence: <span id="confidence-text"></span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Image Visualization -->
+            <div id="image-visualization" class="hidden md:flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                <div class="flex-1 bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-inner flex flex-col items-center">
+                    <h3 class="text-xl font-semibold mb-2">Original Image</h3>
+                    <img id="original-image" src="" alt="Original MRI Scan" class="rounded-lg shadow-md max-w-full h-auto" />
+                </div>
+                <div class="flex-1 bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-inner flex flex-col items-center">
+                    <h3 class="text-xl font-semibold mb-2">Grad-CAM Heatmap</h3>
+                    <img id="heatmap-image" src="" alt="Grad-CAM Heatmap" class="rounded-lg shadow-md max-w-full h-auto" />
+                    <p class="text-xs mt-2 text-gray-500 dark:text-gray-400 italic text-center">
+                        The heatmap highlights areas the model used for its prediction.
+                    </p>
+                </div>
+            </div>
+
+            <div id="single-image-visualization" class="md:hidden flex-col space-y-4 hidden">
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-inner flex flex-col items-center">
+                    <h3 class="text-xl font-semibold mb-2">Original Image</h3>
+                    <img id="original-image-mobile" src="" alt="Original MRI Scan" class="rounded-lg shadow-md max-w-full h-auto" />
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-xl shadow-inner flex flex-col items-center">
+                    <h3 class="text-xl font-semibold mb-2">Grad-CAM Heatmap</h3>
+                    <img id="heatmap-image-mobile" src="" alt="Grad-CAM Heatmap" class="rounded-lg shadow-md max-w-full h-auto" />
+                    <p class="text-xs mt-2 text-gray-500 dark:text-gray-400 italic text-center">
+                        The heatmap highlights areas the model used for its prediction.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Alert Modal -->
+        <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-xl max-w-sm w-full space-y-4">
+                <h3 class="text-2xl font-bold text-center" id="modal-title"></h3>
+                <p class="text-center text-gray-600 dark:text-gray-300" id="modal-message"></p>
+                <div class="flex justify-center">
+                    <button id="modal-close" class="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 px-6 rounded-full transition-colors duration-300">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const imageUpload = document.getElementById('image-upload');
+            const fileNameSpan = document.getElementById('file-name');
+            const predictButton = document.getElementById('predict-button');
+            const resultsContainer = document.getElementById('results-container');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const errorElement = document.getElementById('error-message');
+            const resultDetails = document.getElementById('result-details');
+            const predictionText = document.getElementById('prediction-text');
+            const confidenceText = document.getElementById('confidence-text');
+            const originalImageDesktop = document.getElementById('original-image');
+            const heatmapImageDesktop = document.getElementById('heatmap-image');
+            const originalImageMobile = document.getElementById('original-image-mobile');
+            const heatmapImageMobile = document.getElementById('heatmap-image-mobile');
+            const imageVisualizationDesktop = document.getElementById('image-visualization');
+            const imageVisualizationMobile = document.getElementById('single-image-visualization');
+
+            // Modal elements
+            const modalBackdrop = document.getElementById('modal-backdrop');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const modalClose = document.getElementById('modal-close');
+
+            let selectedFile = null;
+
+            function showModal(title, message) {
+                modalTitle.textContent = title;
+                modalMessage.textContent = message;
+                modalBackdrop.classList.remove('hidden');
+            }
+
+            modalClose.addEventListener('click', () => {
+                modalBackdrop.classList.add('hidden');
+            });
+
+            imageUpload.addEventListener('change', (event) => {
+                if (event.target.files.length > 0) {
+                    selectedFile = event.target.files[0];
+                    fileNameSpan.textContent = selectedFile.name;
+                    predictButton.disabled = false;
+                    predictButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    predictButton.classList.add('hover:bg-green-600');
+                    
+                    // Show a preview of the selected image
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        originalImageDesktop.src = e.target.result;
+                        originalImageMobile.src = e.target.result;
+                        originalImageDesktop.classList.remove('hidden');
+                        originalImageMobile.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(selectedFile);
+
+                    // Reset state
+                    resultsContainer.classList.add('hidden');
+                    errorElement.classList.add('hidden');
+                    resultDetails.classList.add('hidden');
+                    imageVisualizationDesktop.classList.add('hidden');
+                    imageVisualizationMobile.classList.add('hidden');
+                    heatmapImageDesktop.src = '';
+                    heatmapImageMobile.src = '';
+
+                } else {
+                    selectedFile = null;
+                    fileNameSpan.textContent = 'No file chosen';
+                    predictButton.disabled = true;
+                    predictButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    predictButton.classList.remove('hover:bg-green-600');
+                }
+            });
+
+            predictButton.addEventListener('click', async () => {
+                if (!selectedFile) {
+                    showModal('No Image Selected', 'Please select an MRI image file to upload.');
+                    return;
+                }
+
+                resultsContainer.classList.remove('hidden');
+                loadingSpinner.classList.remove('hidden');
+                errorElement.classList.add('hidden');
+                resultDetails.classList.add('hidden');
+                imageVisualizationDesktop.classList.add('hidden');
+                imageVisualizationMobile.classList.add('hidden');
+                predictButton.disabled = true;
+
+                const formData = new FormData();
+                formData.append('image', selectedFile);
+
+                try {
+                    const response = await fetch('/api/predict', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Prediction failed.');
+                    }
+
+                    const data = await response.json();
+
+                    predictionText.textContent = data.predicted_class;
+                    confidenceText.textContent = data.confidence;
+                    resultDetails.classList.remove('hidden');
+
+                    if (data.heatmap) {
+                        heatmapImageDesktop.src = data.heatmap;
+                        heatmapImageMobile.src = data.heatmap;
+                        imageVisualizationDesktop.classList.remove('hidden');
+                        imageVisualizationMobile.classList.remove('hidden');
+                    } else {
+                        heatmapImageDesktop.src = '';
+                        heatmapImageMobile.src = '';
+                    }
+
+                } catch (error) {
+                    console.error('Prediction error:', error);
+                    errorElement.textContent = `Error: ${error.message}`;
+                    errorElement.classList.remove('hidden');
+                } finally {
+                    loadingSpinner.classList.add('hidden');
+                    predictButton.disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
