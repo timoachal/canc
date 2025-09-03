@@ -1,0 +1,9 @@
+services:
+
+type: web
+name: brain-tumor-classifier
+env: python
+buildCommand: "pip install -r requirements.txt"
+startCommand: "gunicorn --bind 0.0.0.0:$PORT app:app"
+plan: starter
+autoDeploy: false
