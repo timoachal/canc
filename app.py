@@ -131,7 +131,7 @@ model = None
 def load_model():
     """Loads the Keras model into a global variable."""
     global model
-    model_path = 'tumor_model.h5' # Assumes the model is in the same directory
+    model_path = 'tumor_model.h5'
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model file not found at '{model_path}'. Please place it in the same directory as app.py.")
     
@@ -177,7 +177,7 @@ def predict():
             predicted_class = 'Tumor' if confidence > 0.5 else 'No Tumor'
         
         print(f"Prediction result: {predicted_class} with confidence {confidence:.2f}")
-
+        
         result = {
             'predicted_class': predicted_class,
             'confidence': f"{confidence:.2%}",
@@ -185,15 +185,13 @@ def predict():
         }
         
         if predicted_class == 'Tumor':
-            print("Predicted class is 'Tumor'. Attempting to generate Grad-CAM heatmap.")
             last_conv_layer_name = get_last_conv_layer_name(model)
             if last_conv_layer_name:
                 print(f"Found last conv layer: {last_conv_layer_name}")
                 heatmap_img = generate_gradcam_heatmap(model, processed_image, last_conv_layer_name)
                 result['heatmap'] = array_to_base64(heatmap_img)
             else:
-                print("Could not find a suitable convolutional layer for Grad-CAM.")
-                result['error'] = 'Could not find a suitable convolutional layer for Grad-CAM.'
+                print("Could not find a convolutional layer for Grad-CAM.")
 
         return jsonify(result)
         
