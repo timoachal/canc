@@ -154,6 +154,7 @@ def index():
 @app.route('/api/predict', methods=['POST'])
 def predict():
     """Handles the image prediction request."""
+    print(f"Prediction request received from URL: {request.url}")
     if 'image' not in request.files:
         return jsonify({'error': 'No image file provided'}), 400
     
