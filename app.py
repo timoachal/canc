@@ -143,6 +143,9 @@ def load_model():
         print(f"Error loading model: {e}")
         raise e
 
+# Load the model as soon as the script is imported by gunicorn
+load_model()
+
 @app.route('/', methods=['GET'])
 def index():
     """Renders the main page."""
@@ -197,7 +200,3 @@ def predict():
         print(f"An error occurred during prediction: {e}")
         print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    load_model() # Load the model when the app starts
-    app.run(debug=True)
