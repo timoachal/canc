@@ -82,15 +82,9 @@ def predict():
         # Get the output tensor
         prediction = interpreter.get_tensor(output_details[0]['index'])
         
-        # Determine prediction result based on model output shape
-        if prediction.shape[-1] == 2: # Multi-class [No Tumor, Tumor]
-            class_names = ['No Tumor', 'Tumor']
-            predicted_class_idx = np.argmax(prediction[0])
-            predicted_class = class_names[predicted_class_idx]
-            confidence = float(prediction[0][predicted_class_idx])
-        else: # Binary classification
-            confidence = float(prediction[0][0])
-            predicted_class = 'Tumor' if confidence > 0.5 else 'No Tumor'
+        # Binary classification logic for the single output value
+        confidence = float(prediction[0][0])
+        predicted_class = 'Tumor' if confidence > 0.5 else 'No Tumor'
         
         print(f"Prediction result: {predicted_class} with confidence {confidence:.2f}")
 
