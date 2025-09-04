@@ -16,6 +16,7 @@ app = Flask(__name__, template_folder='.')
 interpreter = None
 input_details = None
 output_details = None
+class_names = ['No Tumor', 'Tumor']
 
 def load_model():
     """Loads the quantized TFLite model into a global variable."""
@@ -82,15 +83,26 @@ def predict():
         # Get the output tensor
         prediction = interpreter.get_tensor(output_details[0]['index'])
         
-        # Binary classification logic for the single output value
-        confidence = float(prediction[0][0])
-        predicted_class = 'Tumor' if confidence > 0.5 else 'No Tumor'
+        # Get the index of the highest confidence score
+        predicted_index = np.argmax(prediction)
+        
+        # Get the confidence of the predicted class
+        confidence = float(prediction[0][predicted_index])
+        
+        predicted_class = class_names[predicted_index]
         
         print(f"Prediction result: {predicted_class} with confidence {confidence:.2f}")
+
+        # Determine recommendation based on prediction
+        if predicted_class == 'Tumor':
+            recommendation = "This result suggests the presence of a tumor. Please consult with a medical professional for an accurate diagnosis and treatment plan."
+        else:
+            recommendation = "This result suggests no tumor is present. However, this is a preliminary finding from a machine learning model and does not replace professional medical advice. Please consult with a doctor for a definitive diagnosis."
 
         result = {
             'predicted_class': predicted_class,
             'confidence': f"{confidence:.2%}",
+            'recommendation': recommendation,
             'heatmap': None # Grad-CAM is not available for TFLite models
         }
         
